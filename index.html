@@ -136,7 +136,7 @@ summary{cursor:pointer;color:var(--acc);font-weight:600}
     <li>Busque el lente que le gusta. Cada foto tiene su <b>número</b> arriba a la izquierda.</li>
     <li>Toque <b>+</b> debajo de la foto para poner cuántos quiere (o escriba el número). Con <b>−</b> resta.</li>
     <li>Toque la <b>🔍</b> de la foto para verla en grande. Ahí también puede poner la cantidad y una <b>nota</b> (ej. “solo los negros”).</li>
-    <li>En la foto grande puede acercar con <b>🔍+</b> (o con dos dedos, o tocando dos veces). Con <b>−</b> vuelve al tamaño normal. Tocar la foto en la lista ya no hace nada, así no se abre sin querer.</li>
+    <li>En la foto grande puede acercar con <b>🔍+</b> y arrastrar con un dedo para moverla. Con <b>−</b> vuelve al tamaño normal. Deslizar a los lados (sin zoom) pasa a la otra foto. Tocar la foto en la lista ya no hace nada, así no se abre sin querer.</li>
     <li>Con <b>🛒 Elegidas</b> ve solo los que ya escogió.</li>
   </ol>
   <h3>2. Enviar el pedido al proveedor</h3>
@@ -287,7 +287,7 @@ function mostrar() {
   $('lbNota').value = (pedido[f.n] && pedido[f.n].nota) || '';
   [pos - 1, pos + 1].forEach((k) => { if (lista[k]) new Image().src = src(lista[k]); });
 }
-function abrir(i) { pos = i; $('lb').classList.add('open'); mostrar(); history.pushState({ lb: 1 }, ''); }
+function abrir(i) { if (typeof tamanoNormal === 'function') tamanoNormal(); pos = i; $('lb').classList.add('open'); mostrar(); history.pushState({ lb: 1 }, ''); }
 function cerrarLb() {
   if (!$('lb').classList.contains('open')) return false;
   $('lb').classList.remove('open'); pintar();
@@ -305,7 +305,7 @@ document.addEventListener('keydown', (e) => {
   if (!$('lb').classList.contains('open') || e.target.tagName === 'INPUT') return;
   if (e.key === 'ArrowLeft') mover(-1); if (e.key === 'ArrowRight') mover(1); if (e.key === 'Escape') history.back();
 });
-/* Zoom solo dentro de la foto grande: botones 🔍+ / −, pellizcar con dos dedos o doble toque.
+/* Zoom solo con los botones 🔍+ / − de la foto grande (sin pellizco ni doble toque).
    Sin zoom, deslizar a los lados cambia de foto; con zoom, arrastrar mueve la foto. */
 const Z = { s: 1, x: 0, y: 0 };
 const img = $('lbimg'), stage = $('stage');
@@ -344,26 +344,19 @@ $('zMas').onclick = () => zoomEn(Z.s * 1.6, ...centro());
 $('zMenos').onclick = () => zoomEn(Z.s / 1.6, ...centro());
 
 const dedos = new Map();
-let gesto = null, ultimoToque = 0;
+let gesto = null;
 stage.addEventListener('pointerdown', (e) => {
   stage.setPointerCapture(e.pointerId);
   dedos.set(e.pointerId, { x: e.clientX, y: e.clientY });
   const p = [...dedos.values()];
   if (p.length === 1) gesto = { tipo: 'uno', x0: p[0].x, y0: p[0].y, zx: Z.x, zy: Z.y, t: Date.now() };
-  if (p.length === 2) gesto = { tipo: 'dos', d0: Math.hypot(p[0].x - p[1].x, p[0].y - p[1].y), s0: Z.s, m0: [(p[0].x + p[1].x) / 2, (p[0].y + p[1].y) / 2], zx: Z.x, zy: Z.y };
+  if (p.length > 1) gesto = { tipo: 'nada' };   // dos dedos: no hace nada (el zoom es solo con los botones)
 });
 stage.addEventListener('pointermove', (e) => {
   if (!dedos.has(e.pointerId) || !gesto) return;
   dedos.set(e.pointerId, { x: e.clientX, y: e.clientY });
   const p = [...dedos.values()];
-  if (gesto.tipo === 'dos' && p.length === 2) {
-    const d = Math.hypot(p[0].x - p[1].x, p[0].y - p[1].y);
-    const m = [(p[0].x + p[1].x) / 2, (p[0].y + p[1].y) / 2];
-    Z.x = gesto.zx; Z.y = gesto.zy; Z.s = gesto.s0;
-    if (Z.s === 1) { Z.x = 0; Z.y = 0; }
-    zoomEn(gesto.s0 * d / gesto.d0, gesto.m0[0], gesto.m0[1]);
-    if (Z.s > 1) { Z.x += m[0] - gesto.m0[0]; Z.y += m[1] - gesto.m0[1]; aplicar(); }
-  } else if (gesto.tipo === 'uno' && Z.s > 1) {
+  if (gesto.tipo === 'uno' && Z.s > 1) {
     Z.x = gesto.zx + (e.clientX - gesto.x0); Z.y = gesto.zy + (e.clientY - gesto.y0); aplicar();
   }
 });
@@ -373,38 +366,32 @@ function soltar(e) {
   if (gesto && gesto.tipo === 'uno' && dedos.size === 0) {
     const dx = e.clientX - gesto.x0, dy = e.clientY - gesto.y0;
     if (Z.s === 1 && Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) mover(dx < 0 ? 1 : -1);
-    else if (Math.abs(dx) < 10 && Math.abs(dy) < 10) {        // toque corto
-      const ahora = Date.now();
-      if (ahora - ultimoToque < 300) { Z.s > 1 ? sinZoom() : zoomEn(2.5, e.clientX, e.clientY); ultimoToque = 0; }
-      else ultimoToque = ahora;
-    }
   }
-  if (dedos.size === 1) { const q = [...dedos.values()][0]; gesto = { tipo: 'uno', x0: q.x, y0: q.y, zx: Z.x, zy: Z.y, t: Date.now() }; }
   if (dedos.size === 0) gesto = null;
 }
 stage.addEventListener('pointerup', soltar);
 stage.addEventListener('pointercancel', soltar);
-// rueda del ratón en computadora
-stage.addEventListener('wheel', (e) => { e.preventDefault(); zoomEn(Z.s * (e.deltaY < 0 ? 1.2 : 1 / 1.2), e.clientX, e.clientY); }, { passive: false });
 // iPhone: bloquear el zoom del navegador fuera de la foto grande
 ['gesturestart', 'gesturechange', 'gestureend'].forEach((t) => document.addEventListener(t, (e) => e.preventDefault(), { passive: false }));
 // dos dedos fuera de la foto grande: no agrandar la página
 document.addEventListener('touchmove', (e) => {
-  if ((e.touches.length > 1 || (e.scale && e.scale !== 1)) && !e.target.closest('#stage')) e.preventDefault();
+  if (e.touches.length > 1 || (e.scale && e.scale !== 1) || e.target.closest('#stage')) e.preventDefault();
 }, { passive: false });
 // doble toque sobre fotos o espacios vacíos: no agrandar (los botones + y − siguen respondiendo rápido)
 let toqueAnt = 0;
 document.addEventListener('touchend', (e) => {
   const ahora = Date.now();
-  if (ahora - toqueAnt < 350 && !e.target.closest('button, input, textarea, a, #stage')) e.preventDefault();
+  if (e.target.closest('#stage') || (ahora - toqueAnt < 350 && !e.target.closest('button, input, textarea, a'))) e.preventDefault();
   toqueAnt = ahora;
 }, { passive: false });
-document.addEventListener('dblclick', (e) => { if (!e.target.closest('#stage')) e.preventDefault(); }, { passive: false });
+document.addEventListener('dblclick', (e) => e.preventDefault(), { passive: false });
+stage.addEventListener('touchstart', (e) => e.preventDefault(), { passive: false });
 // si el teléfono quedó agrandado, volver al tamaño normal al salir de una casilla
-document.addEventListener('focusout', () => {
+function tamanoNormal() {
   const v = document.querySelector('meta[name=viewport]'); const c = v.content;
   v.content = c + ', maximum-scale=1.0'; setTimeout(() => (v.content = c), 50);
-});
+}
+document.addEventListener('focusout', tamanoNormal);
 window.addEventListener('resize', aplicar);
 
 /* ---- Paneles ---- */
