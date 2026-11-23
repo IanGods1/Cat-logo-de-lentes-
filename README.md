@@ -16,10 +16,14 @@ y mandar el pedido por WhatsApp (con fotos).
 2. En la página toque **🔄**, pegue el link y toque **Actualizar catálogo**.
 3. En 2 a 5 minutos quedan solo las fotos nuevas.
 
+**Con PDF o fotos:** en 🔄 → *Opción 2* → *📄 Elegir archivos*, escoja uno o varios PDF o fotos y toque
+*Subir y actualizar*. Cada página de un PDF se vuelve una foto. Puede *Reemplazar todo* o *Agregar al final*.
+
 La primera vez el botón 🔄 pide una clave de GitHub (los pasos están en la misma pantalla).
 Sin clave: en GitHub → **Actions → Actualizar catálogo → Run workflow**, pegue el link y confirme.
 
 ## Archivos
 - `index.html` – la página.
 - `catalogo.json` y `fotos/` – el catálogo actual (los cambia el proceso de actualizar).
+- `lib/pdf.min.js` y `lib/pdf.worker.min.js` – lector de PDF ([PDF.js](https://mozilla.github.io/pdf.js/), licencia Apache 2.0).
 - `.github/workflows/actualizar-catalogo.yml` y `.github/scripts/actualizar-catalogo.js` – bajan las fotos del álbum.

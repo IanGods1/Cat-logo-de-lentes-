@@ -65,6 +65,10 @@ main{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:
 .ayuda ol{padding-left:20px;margin:6px 0}
 .ayuda li{margin:6px 0}
 .ayuda h3{margin:16px 0 4px;font-size:1rem}
+h3.opcion{margin:18px 0 0;font-size:1rem;border-top:1px solid var(--line);padding-top:14px}
+label.elegir{text-align:center;color:var(--ink);margin-top:10px}
+.modo{margin-top:10px;font-size:.95rem}
+.modo label{display:flex;gap:8px;align-items:center;color:var(--ink);margin:6px 0;font-size:.95rem}
 details{margin-top:10px}
 summary{cursor:pointer;color:var(--acc);font-weight:600}
 /* foto grande */
@@ -165,6 +169,12 @@ summary{cursor:pointer;color:var(--acc);font-weight:600}
     <li>Toque <b>🔄</b> arriba, pegue el link y toque <b>Actualizar catálogo</b>.</li>
     <li>En 2 a 5 minutos la página cambia sola: quedan solo las fotos nuevas y se borran las anteriores.</li>
   </ol>
+  <h3>4. Si el proveedor manda un PDF o fotos sueltas</h3>
+  <ol>
+    <li>Guarde el PDF o las fotos en el teléfono (en WhatsApp: abrir el archivo → Compartir → Guardar en Archivos).</li>
+    <li>Toque <b>🔄</b> → <b>Opción 2</b> → <b>📄 Elegir archivos</b> y escoja los PDF o fotos (puede ser varios).</li>
+    <li>Elija <b>Reemplazar todo</b> o <b>Agregar al final</b> y toque <b>Subir y actualizar</b>. Deje la pantalla abierta hasta que diga ✅ Listo.</li>
+  </ol>
   <p class="aviso">Lo que elige se guarda en este teléfono. Si se actualiza el catálogo, el pedido se vacía porque las fotos cambian.</p>
 </div></div>
 
@@ -173,9 +183,23 @@ summary{cursor:pointer;color:var(--acc);font-weight:600}
   <button class="cerrar" data-cerrar>✕</button>
   <h2>🔄 Actualizar catálogo</h2>
   <div class="aviso" id="origen"></div>
-  <label for="nuevoLink">Link del álbum nuevo de Google Fotos</label>
+  <h3 class="opcion">Opción 1 · Link de Google Fotos</h3>
+  <label for="nuevoLink">Link del álbum nuevo</label>
   <input type="text" id="nuevoLink" placeholder="https://photos.app.goo.gl/…" autocomplete="off">
-  <button class="btn verde" id="actualizar">Actualizar catálogo</button>
+  <button class="btn verde" id="actualizar">Actualizar con el link</button>
+
+  <h3 class="opcion">Opción 2 · Subir PDF o fotos</h3>
+  <label class="btn gris elegir" for="archivos">📄 Elegir archivos (PDF o fotos)</label>
+  <input type="file" id="archivos" accept="application/pdf,.pdf,image/*" multiple hidden>
+  <div class="aviso" id="elegidosTxt">Puede elegir varios a la vez. De cada PDF, cada página se vuelve una foto del catálogo.</div>
+  <label for="nombreCat">Nombre del catálogo (opcional)</label>
+  <input type="text" id="nombreCat" placeholder="Ej. Lentes diciembre" autocomplete="off">
+  <div class="modo">
+    <label><input type="radio" name="modo" value="reemplazar" checked> Reemplazar todo (se borran las fotos de ahora)</label>
+    <label><input type="radio" name="modo" value="agregar"> Agregar al final (se quedan las de ahora)</label>
+  </div>
+  <button class="btn verde" id="subirArchivos" disabled>Subir y actualizar</button>
+
   <div class="estado" id="estado"></div>
   <details id="dClave">
     <summary>🔑 Clave de GitHub (solo la primera vez)</summary>
@@ -183,13 +207,13 @@ summary{cursor:pointer;color:var(--acc);font-weight:600}
     <ol class="aviso">
       <li>En github.com entre a <b>Settings → Developer settings → Personal access tokens → Fine-grained tokens → Generate new token</b>.</li>
       <li>En <b>Repository access</b> elija “Only select repositories” → <b>Cat-logo-de-lentes-</b>.</li>
-      <li>En <b>Permissions</b> → <b>Actions</b> → “Read and write”.</li>
+      <li>En <b>Permissions</b> → <b>Actions</b> → “Read and write” y también <b>Contents</b> → “Read and write” (este último es para subir PDF o fotos).</li>
       <li>Genere la clave, cópiela y péguela aquí.</li>
     </ol>
     <input type="password" id="clave" placeholder="github_pat_…" autocomplete="off">
     <button class="btn gris" id="guardarClave">Guardar clave</button>
   </details>
-  <p class="aviso">Sin clave también se puede: abra <a id="linkGithub" target="_blank" rel="noopener">GitHub → Actualizar catálogo</a>, toque <b>Run workflow</b>, pegue el link y confirme.</p>
+  <p class="aviso">Sin clave también se puede usar el link: abra <a id="linkGithub" target="_blank" rel="noopener">GitHub → Actualizar catálogo</a>, toque <b>Run workflow</b>, pegue el link y confirme.</p>
 </div></div>
 
 <!-- Foto grande -->
@@ -677,6 +701,168 @@ $('guardarClave').onclick = () => { localStorage.setItem('cat-clave', $('clave')
 function estado(t) { $('estado').innerHTML = t; $('estado').classList.add('ver'); }
 const espera = (ms) => new Promise((ok) => setTimeout(ok, ms));
 
+/* Hablar con GitHub usando la clave guardada en este teléfono */
+function gh(ruta, op = {}) {
+  const clave = localStorage.getItem('cat-clave');
+  return fetch(`https://api.github.com/repos/${REPO}${ruta}`, { ...op, headers: { Authorization: 'Bearer ' + clave, Accept: 'application/vnd.github+json', ...(op.headers || {}) } });
+}
+async function ghJson(ruta, op) {
+  const r = await gh(ruta, op);
+  if (r.status === 401) throw new Error('La clave de GitHub no sirve. Revise los pasos de la clave.');
+  if (r.status === 403 || r.status === 404) throw new Error('La clave no tiene permiso de <b>Contents → Read and write</b>. Edite la clave en GitHub, agregue ese permiso y vuelva a intentar.');
+  if (!r.ok) throw new Error('GitHub respondió ' + r.status);
+  return r.json();
+}
+// esperar a que la página publicada muestre el catálogo nuevo
+async function esperarPublicacion(antes) {
+  estado('📦 Guardado. Publicando la página nueva… (1 a 3 minutos)');
+  for (let i = 0; i < 60; i++) {
+    await espera(10000);
+    try {
+      const c = await (await fetch(`catalogo.json?t=${Date.now()}`, { cache: 'no-store' })).json();
+      if (c.actualizado !== antes) { estado(`✅ ¡Listo! Catálogo con ${c.fotos.length} fotos.`); await espera(1500); location.reload(); return; }
+    } catch {}
+  }
+  estado('✅ Fotos guardadas. La página tarda un poco más en publicarse: recargue en unos minutos.');
+}
+
+/* ---- Subir PDF o fotos ---- */
+let pdfjsListo = null;
+function cargarPdfjs() {   // el lector de PDF se carga solo cuando hace falta
+  if (!pdfjsListo) pdfjsListo = new Promise((ok, mal) => {
+    const sc = document.createElement('script'); sc.src = 'lib/pdf.min.js';
+    sc.onload = () => { pdfjsLib.GlobalWorkerOptions.workerSrc = 'lib/pdf.worker.min.js'; ok(pdfjsLib); };
+    sc.onerror = () => { pdfjsListo = null; mal(new Error('No se pudo cargar el lector de PDF. Revise el internet.')); };
+    document.head.appendChild(sc);
+  });
+  return pdfjsListo;
+}
+const esPdf = (f) => f.type === 'application/pdf' || /\.pdf$/i.test(f.name);
+const lienzoAJpg = (c) => new Promise((ok) => c.toBlob(ok, 'image/jpeg', 0.8));
+async function fotoAJpg(file, max = 1000) {
+  let fuente, w, h;
+  try { fuente = await createImageBitmap(file); w = fuente.width; h = fuente.height; }
+  catch {
+    fuente = new Image(); fuente.src = URL.createObjectURL(file);
+    await fuente.decode(); w = fuente.naturalWidth; h = fuente.naturalHeight;
+  }
+  const k = Math.min(1, max / Math.max(w, h));
+  const c = document.createElement('canvas'); c.width = Math.round(w * k); c.height = Math.round(h * k);
+  c.getContext('2d').drawImage(fuente, 0, 0, c.width, c.height);
+  if (fuente.close) fuente.close(); else URL.revokeObjectURL(fuente.src);
+  return lienzoAJpg(c);
+}
+async function paginasDePdf(file, avisar) {
+  const pdfjs = await cargarPdfjs();
+  const doc = await pdfjs.getDocument({ data: await file.arrayBuffer() }).promise;
+  const fotos = [];
+  for (let i = 1; i <= doc.numPages; i++) {
+    avisar(`📄 Leyendo “${esc(file.name)}”: página ${i} de ${doc.numPages}…`);
+    const pag = await doc.getPage(i);
+    const v1 = pag.getViewport({ scale: 1 });
+    const v = pag.getViewport({ scale: Math.min(3, 1200 / Math.max(v1.width, v1.height)) });
+    const c = document.createElement('canvas'); c.width = Math.round(v.width); c.height = Math.round(v.height);
+    const ctx = c.getContext('2d'); ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, c.width, c.height);
+    await pag.render({ canvasContext: ctx, viewport: v }).promise;
+    fotos.push(await lienzoAJpg(c));
+    pag.cleanup(); c.width = c.height = 0;
+  }
+  await doc.destroy();
+  return fotos;
+}
+const aBase64 = (blob) => new Promise((ok, mal) => { const r = new FileReader(); r.onload = () => ok(r.result.split(',')[1]); r.onerror = mal; r.readAsDataURL(blob); });
+
+$('archivos').onchange = () => {
+  const fs = [...$('archivos').files];
+  const pdfs = fs.filter(esPdf).length, fotos = fs.length - pdfs;
+  $('elegidosTxt').innerHTML = fs.length
+    ? `Elegidos: ${[pdfs && `${pdfs} PDF`, fotos && `${fotos} ${fotos === 1 ? 'foto' : 'fotos'}`].filter(Boolean).join(' y ')}<br><small>${fs.map((f) => esc(f.name)).join(', ')}</small>`
+    : 'Puede elegir varios a la vez. De cada PDF, cada página se vuelve una foto del catálogo.';
+  $('subirArchivos').disabled = !fs.length;
+};
+
+$('subirArchivos').onclick = async () => {
+  const archivos = [...$('archivos').files];
+  if (!archivos.length) return;
+  if (!localStorage.getItem('cat-clave')) { $('dClave').open = true; return estado('🔑 Primero guarde la clave de GitHub (abajo).'); }
+  const modo = document.querySelector('input[name=modo]:checked').value;
+  if (modo === 'reemplazar' && !confirm('Se borrarán las fotos que hay ahora y quedarán solo las nuevas. ¿Seguir?')) return;
+  const b = $('subirArchivos'); b.disabled = true; $('actualizar').disabled = true;
+  const antes = CAT.actualizado;
+  try {
+    // 1) convertir todo a fotos JPG
+    const nuevas = [];
+    for (const [k, f] of archivos.entries()) {
+      if (esPdf(f)) nuevas.push(...await paginasDePdf(f, estado));
+      else { estado(`🖼️ Preparando foto ${k + 1} de ${archivos.length}…`); nuevas.push(await fotoAJpg(f)); }
+    }
+    if (!nuevas.length) throw new Error('No se encontraron fotos en los archivos.');
+
+    // 2) ver qué hay ahora en GitHub
+    estado('🔗 Conectando con GitHub…');
+    const ref = await ghJson('/git/ref/heads/main');
+    const ultimo = await ghJson('/git/commits/' + ref.object.sha);
+    const arbol = await ghJson(`/git/trees/${ultimo.tree.sha}?recursive=1`);
+    const viejas = arbol.tree.filter((x) => x.type === 'blob' && x.path.startsWith('fotos/')).map((x) => x.path);
+    let previo = { fotos: [] };
+    try { previo = await ghJson('/contents/catalogo.json', { headers: { Accept: 'application/vnd.github.raw+json' } }); } catch {}
+
+    // 3) subir las fotos (de 4 en 4)
+    const sello = Date.now().toString(36);
+    let inicio = 1, lista = [];
+    if (modo === 'agregar') { lista = previo.fotos || []; inicio = lista.reduce((m, f) => Math.max(m, f.n), 0) + 1; }
+    const entradas = new Array(nuevas.length);
+    let hechas = 0, sig = 0;
+    async function trabajador() {
+      while (sig < nuevas.length) {
+        const i = sig++;
+        const n = inicio + i;
+        const ruta = modo === 'agregar' ? `fotos/${String(n).padStart(3, '0')}-${sello}.jpg` : `fotos/${String(n).padStart(3, '0')}.jpg`;
+        let blob;
+        for (let intento = 1; ; intento++) {
+          try { blob = await ghJson('/git/blobs', { method: 'POST', body: JSON.stringify({ content: await aBase64(nuevas[i]), encoding: 'base64' }) }); break; }
+          catch (e) { if (intento >= 3 || /clave|permiso/.test(e.message)) throw e; await espera(1500 * intento); }
+        }
+        entradas[i] = { path: ruta, mode: '100644', type: 'blob', sha: blob.sha, n };
+        estado(`⬆️ Subiendo fotos: ${++hechas} de ${nuevas.length}… (no cierre esta pantalla)`);
+      }
+    }
+    await Promise.all(Array.from({ length: 4 }, trabajador));
+
+    // 4) catálogo nuevo
+    const ahora = new Date().toISOString();
+    const catalogo = {
+      id: modo === 'agregar' && previo.id ? previo.id : sello,     // al agregar, el pedido que lleva se conserva
+      titulo: $('nombreCat').value.trim() || (modo === 'agregar' && previo.titulo) || archivos[0].name.replace(/\.[^.]+$/, ''),
+      origen: (modo === 'agregar' && previo.origen ? previo.origen + ' + ' : '') + 'Archivos subidos: ' + archivos.map((f) => f.name).join(', '),
+      actualizado: ahora,
+      fotos: [...lista, ...entradas.map((e) => ({ n: e.n, archivo: e.path }))],
+    };
+    const nuevasRutas = new Set(entradas.map((e) => e.path));
+    const borrar = modo === 'reemplazar' ? viejas.filter((p) => !nuevasRutas.has(p)).map((path) => ({ path, mode: '100644', type: 'blob', sha: null })) : [];
+
+    // 5) guardar todo junto en un solo cambio
+    estado('💾 Guardando el catálogo…');
+    const t = await ghJson('/git/trees', { method: 'POST', body: JSON.stringify({
+      base_tree: ultimo.tree.sha,
+      tree: [
+        ...entradas.map(({ path, mode, type, sha }) => ({ path, mode, type, sha })),
+        ...borrar,
+        { path: 'catalogo.json', mode: '100644', type: 'blob', content: JSON.stringify(catalogo, null, 1) },
+      ],
+    }) });
+    const c = await ghJson('/git/commits', { method: 'POST', body: JSON.stringify({
+      message: `Catálogo actualizado con archivos (${nuevas.length} fotos, ${modo})`, tree: t.sha, parents: [ref.object.sha],
+    }) });
+    const r = await gh('/git/refs/heads/main', { method: 'PATCH', body: JSON.stringify({ sha: c.sha }) });
+    if (!r.ok) throw new Error('No se pudo guardar porque el catálogo cambió al mismo tiempo. Intente otra vez en un minuto.');
+    $('archivos').value = ''; $('archivos').onchange();
+    await esperarPublicacion(antes);
+  } catch (e) {
+    estado('❌ ' + (e.message || e));
+  } finally { b.disabled = !$('archivos').files.length; $('actualizar').disabled = false; }
+};
+
 $('actualizar').onclick = async () => {
   const link = $('nuevoLink').value.trim();
   if (!/^https:\/\/(photos\.app\.goo\.gl|photos\.google\.com)\//.test(link)) return estado('⚠️ Pegue un link de Google Fotos (empieza con https://photos.app.goo.gl/ o https://photos.google.com/).');
@@ -684,7 +870,7 @@ $('actualizar').onclick = async () => {
   if (!clave) { $('dClave').open = true; return estado('🔑 Primero guarde la clave de GitHub (abajo).'); }
   const api = (ruta, op = {}) => fetch(`https://api.github.com/repos/${REPO}${ruta}`, { ...op, headers: { Authorization: 'Bearer ' + clave, Accept: 'application/vnd.github+json', ...(op.headers || {}) } });
   const b = $('actualizar'); b.disabled = true;
-  const idAntes = CAT.id;
+  const antes = CAT.actualizado;
   try {
     const desde = new Date(Date.now() - 60000).toISOString();
     const r = await api(`/actions/workflows/${FLUJO}/dispatches`, { method: 'POST', body: JSON.stringify({ ref: 'main', inputs: { url: link } }) });
@@ -705,15 +891,7 @@ $('actualizar').onclick = async () => {
     if (!corrida || corrida.conclusion !== 'success') {
       throw new Error(`El proceso falló. Revise que el álbum esté compartido con link. <a href="${corrida ? corrida.html_url : $('linkGithub').href}" target="_blank" rel="noopener">Ver detalle</a>`);
     }
-    estado('📦 Fotos descargadas. Publicando la página nueva…');
-    for (let i = 0; i < 60; i++) {
-      await espera(10000);
-      try {
-        const c = await (await fetch(`catalogo.json?t=${Date.now()}`, { cache: 'no-store' })).json();
-        if (c.id !== idAntes) { estado(`✅ ¡Listo! Catálogo nuevo con ${c.fotos.length} fotos.`); await espera(1500); location.reload(); return; }
-      } catch {}
-    }
-    estado('✅ Fotos guardadas. La página tarda un poco más en publicarse: recargue en unos minutos.');
+    await esperarPublicacion(antes);
   } catch (e) {
     estado('❌ ' + e.message);
   } finally { b.disabled = false; }
