@@ -29,7 +29,7 @@ main{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:
 .foto img{width:100%;height:100%;object-fit:cover;display:block;pointer-events:none}
 .lupa{position:absolute;right:6px;top:6px;width:40px;height:40px;border-radius:999px;border:0;background:rgba(0,0,0,.7);color:#fff;font-size:1.15rem;cursor:pointer;display:flex;align-items:center;justify-content:center}
 .num{position:absolute;left:6px;top:6px;background:rgba(0,0,0,.7);color:#fff;font-size:.75rem;font-weight:700;padding:2px 8px;border-radius:999px}
-.nota-ico{position:absolute;left:6px;bottom:6px;background:rgba(0,0,0,.7);color:#fff;font-size:.75rem;padding:2px 6px;border-radius:999px}
+.nota-ico{position:absolute;right:6px;bottom:6px;background:rgba(0,0,0,.7);color:#fff;font-size:.75rem;padding:2px 6px;border-radius:999px}
 .paso{display:flex;align-items:center;justify-content:space-between;padding:6px}
 .paso button{width:40px;height:36px;border-radius:8px;border:1px solid #d5d5d2;background:#fff;font-size:1.3rem;cursor:pointer;line-height:1}
 .paso button.mas{background:var(--acc);color:#fff;border-color:var(--acc)}
@@ -73,9 +73,20 @@ summary{cursor:pointer;color:var(--acc);font-weight:600}
 #lb .top{display:flex;justify-content:space-between;align-items:center;color:#fff;padding:12px 14px}
 #lb .top button{background:none;border:0;color:#fff;font-size:1.6rem;cursor:pointer}
 #lb .stage,#lb .stage *{touch-action:none}
-#lb .stage{flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden;touch-action:none;min-height:0}
+#lb .stage{position:relative;flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden;touch-action:none;min-height:0}
 #lb .stage img{max-width:100%;max-height:100%;object-fit:contain;transform-origin:0 0;will-change:transform;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 #lb .zoom{display:flex;gap:6px;align-items:center}
+#marcas{position:absolute;left:0;top:0;transform-origin:0 0;pointer-events:none}
+#bMarcar{font-size:1rem !important;padding:0 12px !important}
+#herr{display:none;gap:6px;justify-content:center;flex-wrap:wrap;margin-bottom:8px}
+#lb.marcando #herr{display:flex}
+#lb.marcando .nav,#lb.marcando #zMas,#lb.marcando #zMenos{display:none}
+#lb.marcando #bMarcar{background:var(--acc) !important;border-color:var(--acc) !important}
+#herr button{background:#222;color:#fff;border:1px solid #444;border-radius:10px;padding:8px 11px;font-size:.95rem;cursor:pointer}
+#herr button.on{background:#fff;color:#111;border-color:#fff}
+#herr .ayudita{width:100%;text-align:center;color:#bbb;font-size:.8rem;margin-top:2px}
+.marca-ico{position:absolute;left:6px;bottom:6px;background:var(--acc);color:#fff;font-size:.75rem;padding:2px 7px;border-radius:999px}
+.linea canvas{width:64px;height:80px;border-radius:8px;background:#eee;flex:none}
 #lb .zoom button{font-size:1.1rem;background:#222;border:1px solid #444;border-radius:999px;min-width:42px;height:38px;padding:0 10px}
 #lb.zoomed .nav{display:none}
 #lb .nav{position:absolute;top:45%;transform:translateY(-50%);background:rgba(255,255,255,.15);border:0;color:#fff;font-size:2rem;width:46px;height:64px;cursor:pointer;border-radius:8px}
@@ -137,6 +148,7 @@ summary{cursor:pointer;color:var(--acc);font-weight:600}
     <li>Toque <b>+</b> debajo de la foto para poner cuántos quiere (o escriba el número). Con <b>−</b> resta.</li>
     <li>Toque la <b>🔍</b> de la foto para verla en grande. Ahí también puede poner la cantidad y una <b>nota</b> (ej. “solo los negros”).</li>
     <li>En la foto grande puede acercar con <b>🔍+</b> y arrastrar con un dedo para moverla. Con <b>−</b> vuelve al tamaño normal. Deslizar a los lados (sin zoom) pasa a la otra foto. Tocar la foto en la lista ya no hace nada, así no se abre sin querer.</li>
+    <li><b>¿Solo quiere algunos colores?</b> En la foto grande toque <b>✏️ Marcar</b>. Con <b>✅ Palomita</b> toque cada color que quiere; con <b>✏️ Lápiz</b> puede encerrar o rayar con el dedo. <b>↩ Deshacer</b> quita la última marca. Toque <b>Listo</b> al terminar. Las marcas se mandan dibujadas en la foto al proveedor.</li>
     <li>Con <b>🛒 Elegidas</b> ve solo los que ya escogió.</li>
   </ol>
   <h3>2. Enviar el pedido al proveedor</h3>
@@ -182,11 +194,19 @@ summary{cursor:pointer;color:var(--acc);font-weight:600}
 
 <!-- Foto grande -->
 <div id="lb">
-  <div class="top"><span id="lbn"></span><span class="zoom"><button id="zMenos" aria-label="Alejar">−</button><button id="zMas" aria-label="Acercar">🔍+</button><button id="lbCerrar" aria-label="Cerrar">✕</button></span></div>
-  <div class="stage" id="stage"><img id="lbimg" alt=""></div>
+  <div class="top"><span id="lbn"></span><span class="zoom"><button id="bMarcar" aria-label="Marcar en la foto">✏️ Marcar</button><button id="zMenos" aria-label="Alejar">−</button><button id="zMas" aria-label="Acercar">🔍+</button><button id="lbCerrar" aria-label="Cerrar">✕</button></span></div>
+  <div class="stage" id="stage"><img id="lbimg" alt=""><canvas id="marcas"></canvas></div>
   <button class="nav prev" id="prev" aria-label="Anterior">‹</button>
   <button class="nav next" id="next" aria-label="Siguiente">›</button>
   <div class="abajo">
+    <div id="herr">
+      <button id="hPalomita" class="on">✅ Palomita</button>
+      <button id="hLapiz">✏️ Lápiz</button>
+      <button id="hDeshacer">↩ Deshacer</button>
+      <button id="hBorrar">🗑 Borrar</button>
+      <button id="hListo">Listo</button>
+      <div class="ayudita" id="hTxt">Toque cada color que quiere para ponerle ✅. Toque la ✅ otra vez para quitarla.</div>
+    </div>
     <div class="paso"><button data-d="-1">−</button><input id="lbCant" type="number" inputmode="numeric" min="0" value="0"><button class="mas" data-d="1">+</button></div>
     <input class="nota" id="lbNota" placeholder="Nota para el proveedor (opcional)">
   </div>
@@ -214,6 +234,29 @@ $('saludo').onchange = () => guardar('cat-saludo', $('saludo').value);
 
 const src = (f) => `${f.archivo}?v=${CAT.id}`;
 const cant = (n) => (pedido[n] && pedido[n].c) || 0;
+const tieneMarcas = (n) => !!(pedido[n] && pedido[n].marcas && pedido[n].marcas.length);
+
+/* Dibuja las marcas (palomitas y rayas) sobre una foto de W x H.
+   Las marcas se guardan en proporción a la foto (0 a 1), así sirven en cualquier tamaño. */
+function dibujarMarcas(ctx, marcas, W, H) {
+  const g = Math.min(W, H);
+  for (const m of marcas || []) {
+    if (m.t === 'l' && m.p.length) {
+      ctx.strokeStyle = '#ff1744'; ctx.lineWidth = Math.max(2, g * 0.012); ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+      ctx.shadowColor = 'rgba(255,255,255,.9)'; ctx.shadowBlur = Math.max(1, g * 0.006);
+      ctx.beginPath(); ctx.moveTo(m.p[0][0] * W, m.p[0][1] * H);
+      for (const q of m.p.slice(1)) ctx.lineTo(q[0] * W, q[1] * H);
+      if (m.p.length === 1) ctx.lineTo(m.p[0][0] * W + 0.1, m.p[0][1] * H);
+      ctx.stroke(); ctx.shadowBlur = 0;
+    } else if (m.t === 'v') {
+      const x = m.x * W, y = m.y * H, r = Math.max(8, g * 0.05);
+      ctx.fillStyle = '#12b04a'; ctx.strokeStyle = '#fff'; ctx.lineWidth = Math.max(2, r * 0.18);
+      ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.lineWidth = Math.max(2, r * 0.26);
+      ctx.beginPath(); ctx.moveTo(x - r * 0.45, y + r * 0.02); ctx.lineTo(x - r * 0.1, y + r * 0.38); ctx.lineTo(x + r * 0.5, y - r * 0.35); ctx.stroke();
+    }
+  }
+}
 const elegidos = () => CAT.fotos.filter((f) => cant(f.n) > 0);
 
 async function cargar() {
@@ -237,7 +280,7 @@ async function cargar() {
 }
 
 function guardarPedido() {
-  for (const n in pedido) if (!pedido[n].c && !pedido[n].nota) delete pedido[n];
+  for (const n in pedido) if (!pedido[n].c && !pedido[n].nota && !(pedido[n].marcas || []).length) delete pedido[n];
   guardar('cat-pedido', { id: CAT.id, items: pedido });
   const el = elegidos();
   const u = el.reduce((s, f) => s + cant(f.n), 0);
@@ -263,7 +306,7 @@ function pintar() {
   if (!lista.length) { g.innerHTML = '<div class="vacio">Todavía no ha elegido ningún lente. Toque <b>+</b> debajo de una foto.</div>'; return; }
   g.innerHTML = lista.map((f, i) => `
     <div class="item ${cant(f.n) ? 'sel' : ''}" id="n${f.n}" data-n="${f.n}">
-      <div class="foto"><img loading="lazy" src="${src(f)}" alt="Lentes nº ${f.n}"><span class="num">${f.n}</span><button class="lupa" data-i="${i}" aria-label="Ver en grande">🔍</button>${pedido[f.n] && pedido[f.n].nota ? '<span class="nota-ico">📝</span>' : ''}</div>
+      <div class="foto"><img loading="lazy" src="${src(f)}" alt="Lentes nº ${f.n}"><span class="num">${f.n}</span><button class="lupa" data-i="${i}" aria-label="Ver en grande">🔍</button>${pedido[f.n] && pedido[f.n].nota ? '<span class="nota-ico">📝</span>' : ''}${tieneMarcas(f.n) ? '<span class="marca-ico">✏️ marcado</span>' : ''}</div>
       <div class="paso"><button data-d="-1" aria-label="Menos">−</button><input type="number" inputmode="numeric" min="0" value="${cant(f.n)}" aria-label="Cantidad"><button class="mas" data-d="1" aria-label="Más">+</button></div>
     </div>`).join('');
 }
@@ -285,11 +328,13 @@ function mostrar() {
   $('lbn').textContent = `Nº ${f.n}  ·  ${pos + 1} de ${lista.length}`;
   $('lbCant').value = cant(f.n);
   $('lbNota').value = (pedido[f.n] && pedido[f.n].nota) || '';
+  if (img.complete) ajustarMarcas();
   [pos - 1, pos + 1].forEach((k) => { if (lista[k]) new Image().src = src(lista[k]); });
 }
 function abrir(i) { if (typeof tamanoNormal === 'function') tamanoNormal(); pos = i; $('lb').classList.add('open'); mostrar(); history.pushState({ lb: 1 }, ''); }
 function cerrarLb() {
   if (!$('lb').classList.contains('open')) return false;
+  modoMarcar(false);
   $('lb').classList.remove('open'); pintar();
   const el = lista[pos] && $('n' + lista[pos].n); if (el) el.scrollIntoView({ block: 'center' });
   return true;
@@ -308,7 +353,58 @@ document.addEventListener('keydown', (e) => {
 /* Zoom solo con los botones 🔍+ / − de la foto grande (sin pellizco ni doble toque).
    Sin zoom, deslizar a los lados cambia de foto; con zoom, arrastrar mueve la foto. */
 const Z = { s: 1, x: 0, y: 0 };
-const img = $('lbimg'), stage = $('stage');
+const img = $('lbimg'), stage = $('stage'), lienzo = $('marcas');
+
+/* ---- Marcar en la foto: ✅ palomita o ✏️ lápiz ---- */
+let marcando = false, herramienta = 'v', trazo = null;
+function marcasActuales() { const n = lista[pos].n; return (pedido[n] && pedido[n].marcas) || []; }
+function guardarMarcas(m) {
+  const n = lista[pos].n;
+  pedido[n] = { ...(pedido[n] || { c: 0 }), marcas: m };
+  // si marcó algo y no tenía cantidad, se pone 1 para que entre en el pedido
+  if (m.length && !pedido[n].c) { pedido[n].c = 1; $('lbCant').value = 1; }
+  guardarPedido();
+}
+function ajustarMarcas() {   // pone el lienzo justo encima de la foto
+  const d = window.devicePixelRatio || 1;
+  lienzo.style.left = img.offsetLeft + 'px'; lienzo.style.top = img.offsetTop + 'px';
+  lienzo.style.width = img.offsetWidth + 'px'; lienzo.style.height = img.offsetHeight + 'px';
+  lienzo.width = Math.round(img.offsetWidth * d); lienzo.height = Math.round(img.offsetHeight * d);
+  lienzo.style.transform = img.style.transform;
+  pintarMarcas();
+}
+function pintarMarcas() {
+  const ctx = lienzo.getContext('2d');
+  ctx.clearRect(0, 0, lienzo.width, lienzo.height);
+  if (!lista[pos]) return;
+  dibujarMarcas(ctx, trazo ? [...marcasActuales(), trazo] : marcasActuales(), lienzo.width, lienzo.height);
+}
+img.addEventListener('load', ajustarMarcas);
+// si la foto cambia de tamaño (al abrir las herramientas, girar el teléfono…) el lienzo la sigue
+if (window.ResizeObserver) new ResizeObserver(() => ajustarMarcas()).observe(img);
+function puntoEnFoto(e) {   // de la pantalla a proporción de la foto (0 a 1)
+  const r = lienzo.getBoundingClientRect();
+  return [Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)), Math.min(1, Math.max(0, (e.clientY - r.top) / r.height))];
+}
+function modoMarcar(si) {
+  marcando = si; trazo = null;
+  $('lb').classList.toggle('marcando', si);
+  $('bMarcar').textContent = si ? '✏️ Marcando' : '✏️ Marcar';
+  if (si) sinZoom();
+  requestAnimationFrame(ajustarMarcas);
+}
+function elegirHerr(h) {
+  herramienta = h;
+  $('hPalomita').classList.toggle('on', h === 'v'); $('hLapiz').classList.toggle('on', h === 'l');
+  $('hTxt').textContent = h === 'v' ? 'Toque cada color que quiere para ponerle ✅. Toque la ✅ otra vez para quitarla.'
+    : 'Dibuje con el dedo: encierre o raye lo que quiere (o lo que no quiere).';
+}
+$('bMarcar').onclick = () => modoMarcar(!marcando);
+$('hListo').onclick = () => modoMarcar(false);
+$('hPalomita').onclick = () => elegirHerr('v');
+$('hLapiz').onclick = () => elegirHerr('l');
+$('hDeshacer').onclick = () => { guardarMarcas(marcasActuales().slice(0, -1)); pintarMarcas(); };
+$('hBorrar').onclick = () => { if (marcasActuales().length && confirm('¿Borrar todas las marcas de esta foto?')) { guardarMarcas([]); pintarMarcas(); } };
 function base() { // tamaño y posición de la foto sin zoom, dentro del escenario
   const r = stage.getBoundingClientRect();
   return { w: img.offsetWidth, h: img.offsetHeight, ox: img.offsetLeft, oy: img.offsetTop, r };
@@ -325,6 +421,7 @@ function limitar() {
 function aplicar() {
   if (Z.s <= 1.001) { Z.s = 1; Z.x = 0; Z.y = 0; } else limitar();
   img.style.transform = Z.s === 1 ? '' : `translate(${Z.x}px,${Z.y}px) scale(${Z.s})`;
+  lienzo.style.transform = img.style.transform;
   $('lb').classList.toggle('zoomed', Z.s > 1);
   $('zMenos').disabled = Z.s === 1;
 }
@@ -349,13 +446,24 @@ stage.addEventListener('pointerdown', (e) => {
   stage.setPointerCapture(e.pointerId);
   dedos.set(e.pointerId, { x: e.clientX, y: e.clientY });
   const p = [...dedos.values()];
+  if (marcando) {
+    if (p.length > 1) { trazo = null; gesto = { tipo: 'nada' }; pintarMarcas(); return; }
+    const [x, y] = puntoEnFoto(e);
+    gesto = { tipo: 'marca', x0: e.clientX, y0: e.clientY };
+    if (herramienta === 'l') { trazo = { t: 'l', p: [[+x.toFixed(4), +y.toFixed(4)]] }; pintarMarcas(); }
+    return;
+  }
   if (p.length === 1) gesto = { tipo: 'uno', x0: p[0].x, y0: p[0].y, zx: Z.x, zy: Z.y, t: Date.now() };
   if (p.length > 1) gesto = { tipo: 'nada' };   // dos dedos: no hace nada (el zoom es solo con los botones)
 });
 stage.addEventListener('pointermove', (e) => {
   if (!dedos.has(e.pointerId) || !gesto) return;
   dedos.set(e.pointerId, { x: e.clientX, y: e.clientY });
-  const p = [...dedos.values()];
+  if (gesto.tipo === 'marca' && trazo) {
+    const [x, y] = puntoEnFoto(e), u = trazo.p[trazo.p.length - 1];
+    if (Math.hypot(x - u[0], y - u[1]) > 0.004) { trazo.p.push([+x.toFixed(4), +y.toFixed(4)]); pintarMarcas(); }
+    return;
+  }
   if (gesto.tipo === 'uno' && Z.s > 1) {
     Z.x = gesto.zx + (e.clientX - gesto.x0); Z.y = gesto.zy + (e.clientY - gesto.y0); aplicar();
   }
@@ -363,6 +471,17 @@ stage.addEventListener('pointermove', (e) => {
 function soltar(e) {
   if (!dedos.has(e.pointerId)) return;
   dedos.delete(e.pointerId);
+  if (gesto && gesto.tipo === 'marca' && dedos.size === 0) {
+    if (herramienta === 'l' && trazo) { const t = trazo; trazo = null; guardarMarcas([...marcasActuales(), t]); }
+    else if (herramienta === 'v' && Math.hypot(e.clientX - gesto.x0, e.clientY - gesto.y0) < 15) {
+      const [x, y] = puntoEnFoto(e), r = lienzo.getBoundingClientRect();
+      const m = marcasActuales();
+      // si tocó encima de una ✅, se quita; si no, se pone una nueva
+      const i = m.findIndex((k) => k.t === 'v' && Math.hypot((k.x - x) * r.width, (k.y - y) * r.height) < Math.min(r.width, r.height) * 0.06);
+      guardarMarcas(i >= 0 ? m.filter((_, j) => j !== i) : [...m, { t: 'v', x: +x.toFixed(4), y: +y.toFixed(4) }]);
+    }
+    pintarMarcas(); gesto = null; return;
+  }
   if (gesto && gesto.tipo === 'uno' && dedos.size === 0) {
     const dx = e.clientX - gesto.x0, dy = e.clientY - gesto.y0;
     if (Z.s === 1 && Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) mover(dx < 0 ? 1 : -1);
@@ -392,7 +511,7 @@ function tamanoNormal() {
   v.content = c + ', maximum-scale=1.0'; setTimeout(() => (v.content = c), 50);
 }
 document.addEventListener('focusout', tamanoNormal);
-window.addEventListener('resize', aplicar);
+window.addEventListener('resize', () => { aplicar(); ajustarMarcas(); });
 
 /* ---- Paneles ---- */
 function abrirPanel(id) { $(id).classList.add('open'); history.pushState({ panel: id }, ''); }
@@ -415,16 +534,25 @@ $('ir').addEventListener('change', (e) => {
 function pintarPedido() {
   const el = elegidos();
   const u = el.reduce((s, f) => s + cant(f.n), 0);
-  $('pResumen').textContent = el.length ? `${el.length} modelos · ${u} unidades en total` : 'El pedido está vacío.';
+  $('pResumen').textContent = el.length ? `${el.length} ${el.length === 1 ? 'modelo' : 'modelos'} · ${u} ${u === 1 ? 'unidad' : 'unidades'} en total` : 'El pedido está vacío.';
   $('pLista').innerHTML = el.map((f) => `
     <div class="linea" data-n="${f.n}">
-      <img src="${src(f)}" alt="" data-ver="${f.n}">
+      <canvas data-mini="${f.n}" width="128" height="160"></canvas>
       <div class="der">
         <b>Nº ${f.n}</b>
         <div class="paso"><button data-d="-1">−</button><input type="number" inputmode="numeric" min="0" value="${cant(f.n)}"><button class="mas" data-d="1">+</button></div>
         <input class="nota" placeholder="Nota (opcional)" value="${esc((pedido[f.n] && pedido[f.n].nota) || '')}">
       </div>
     </div>`).join('');
+  // miniaturas dibujadas con sus marcas
+  $('pLista').querySelectorAll('canvas[data-mini]').forEach(async (cv) => {
+    const f = CAT.fotos.find((x) => x.n === +cv.dataset.mini), im = new Image();
+    im.src = src(f); try { await im.decode(); } catch { return; }
+    const ctx = cv.getContext('2d'), k = Math.min(cv.width / im.naturalWidth, cv.height / im.naturalHeight);
+    const w = im.naturalWidth * k, h = im.naturalHeight * k, x = (cv.width - w) / 2, y = (cv.height - h) / 2;
+    ctx.drawImage(im, x, y, w, h);
+    ctx.save(); ctx.translate(x, y); dibujarMarcas(ctx, pedido[f.n].marcas, w, h); ctx.restore();
+  });
 }
 $('carrito').onclick = () => { pintarPedido(); abrirPanel('pPedido'); };
 $('pLista').addEventListener('click', (e) => {
@@ -446,7 +574,7 @@ function textoPedido() {
   const el = elegidos();
   const u = el.reduce((s, f) => s + cant(f.n), 0);
   const lineas = el.map((f) => {
-    const nota = pedido[f.n].nota ? ` (${pedido[f.n].nota.trim()})` : '';
+    const nota = (pedido[f.n].nota ? ` (${pedido[f.n].nota.trim()})` : '') + (tieneMarcas(f.n) ? ' — ver lo marcado en la foto' : '');
     return `• Foto Nº ${f.n}: ${cant(f.n)} ${cant(f.n) === 1 ? 'unidad' : 'unidades'}${nota}`;
   });
   return `${$('saludo').value.trim()}\n\nCatálogo: ${CAT.titulo}\n\n${lineas.join('\n')}\n\nTotal: ${el.length} modelos, ${u} unidades`;
@@ -484,9 +612,10 @@ async function fotoConTexto(f) {
   const ctx = c.getContext('2d');
   ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, c.width, c.height);
   ctx.drawImage(img, 0, 0);
+  dibujarMarcas(ctx, pedido[f.n].marcas, W, H);
   ctx.fillStyle = '#111'; ctx.textBaseline = 'top';
   ctx.font = `bold ${t1}px sans-serif`;
-  ctx.fillText(`Nº ${f.n}  —  Cantidad: ${cant(f.n)}`, pad, H + pad);
+  ctx.fillText(`Nº ${f.n}  —  Cantidad: ${cant(f.n)}${tieneMarcas(f.n) ? '  (lo marcado)' : ''}`, pad, H + pad);
   ctx.font = `${t2}px sans-serif`; ctx.fillStyle = '#333';
   lineasNota.forEach((l, i) => ctx.fillText(l, pad, H + pad + t1 + 8 * esc + i * t2 * 1.3));
   const blob = await new Promise((ok) => c.toBlob(ok, 'image/jpeg', 0.85));
