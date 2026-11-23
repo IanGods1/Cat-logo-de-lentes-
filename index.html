@@ -7,8 +7,10 @@
 <style>
 :root{--bg:#f6f6f4;--card:#fff;--ink:#1c1c1c;--muted:#6b6b6b;--acc:#128c4a;--line:#e3e3e0}
 *{box-sizing:border-box}
-html,body{touch-action:pan-x pan-y}
-button,input{touch-action:manipulation}
+html,body{touch-action:pan-x pan-y;-webkit-text-size-adjust:100%;text-size-adjust:100%}
+*{touch-action:manipulation}
+/* iPhone agranda la página al tocar una casilla con letra menor a 16px: todas a 16px o más */
+input,textarea,select{font-size:16px !important}
 body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink);padding-bottom:90px}
 button,input,textarea{font:inherit}
 header{position:sticky;top:0;z-index:5;background:rgba(246,246,244,.96);backdrop-filter:blur(8px);padding:12px 14px 10px;border-bottom:1px solid var(--line)}
@@ -70,6 +72,7 @@ summary{cursor:pointer;color:var(--acc);font-weight:600}
 #lb.open{display:flex}
 #lb .top{display:flex;justify-content:space-between;align-items:center;color:#fff;padding:12px 14px}
 #lb .top button{background:none;border:0;color:#fff;font-size:1.6rem;cursor:pointer}
+#lb .stage,#lb .stage *{touch-action:none}
 #lb .stage{flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden;touch-action:none;min-height:0}
 #lb .stage img{max-width:100%;max-height:100%;object-fit:contain;transform-origin:0 0;will-change:transform;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 #lb .zoom{display:flex;gap:6px;align-items:center}
@@ -384,7 +387,24 @@ stage.addEventListener('pointercancel', soltar);
 // rueda del ratón en computadora
 stage.addEventListener('wheel', (e) => { e.preventDefault(); zoomEn(Z.s * (e.deltaY < 0 ? 1.2 : 1 / 1.2), e.clientX, e.clientY); }, { passive: false });
 // iPhone: bloquear el zoom del navegador fuera de la foto grande
-document.addEventListener('gesturestart', (e) => e.preventDefault());
+['gesturestart', 'gesturechange', 'gestureend'].forEach((t) => document.addEventListener(t, (e) => e.preventDefault(), { passive: false }));
+// dos dedos fuera de la foto grande: no agrandar la página
+document.addEventListener('touchmove', (e) => {
+  if ((e.touches.length > 1 || (e.scale && e.scale !== 1)) && !e.target.closest('#stage')) e.preventDefault();
+}, { passive: false });
+// doble toque sobre fotos o espacios vacíos: no agrandar (los botones + y − siguen respondiendo rápido)
+let toqueAnt = 0;
+document.addEventListener('touchend', (e) => {
+  const ahora = Date.now();
+  if (ahora - toqueAnt < 350 && !e.target.closest('button, input, textarea, a, #stage')) e.preventDefault();
+  toqueAnt = ahora;
+}, { passive: false });
+document.addEventListener('dblclick', (e) => { if (!e.target.closest('#stage')) e.preventDefault(); }, { passive: false });
+// si el teléfono quedó agrandado, volver al tamaño normal al salir de una casilla
+document.addEventListener('focusout', () => {
+  const v = document.querySelector('meta[name=viewport]'); const c = v.content;
+  v.content = c + ', maximum-scale=1.0'; setTimeout(() => (v.content = c), 50);
+});
 window.addEventListener('resize', aplicar);
 
 /* ---- Paneles ---- */
